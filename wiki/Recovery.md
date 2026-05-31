@@ -178,7 +178,10 @@ what `TestRecoveryDropsTornTail` checks by appending garbage to a log.
 
 - [Write-Path](Write-Path) for the durability barrier that makes recovery
   possible.
+- [Write-Ahead-Log](Write-Ahead-Log) for the record framing and torn-tail logic.
+- [Manifest-and-Versioning](Manifest-and-Versioning) for the edit log replayed on open.
 - [Compaction](Compaction) for the atomic table swap through the manifest.
+- [Testing-Strategy](Testing-Strategy) for the crash tests that prove the contract.
 - [Troubleshooting](Troubleshooting) for recovery-related symptoms.
 
 ---

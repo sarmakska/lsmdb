@@ -30,8 +30,9 @@ blocks writers. This is a deliberate trade made for provable correctness, and it
 is first on the list to change.
 
 **Every Put fsyncs.** Durable writes cost one fsync each, dominated by device
-latency (around 2.8 ms on an Apple M3 Pro; see the README benchmarks). There is
-no batched-write path yet, so write-heavy bulk loads pay the fsync per record.
+latency (around 2.8 ms on a quiet Apple M3 Pro; see
+[Performance-and-Benchmarks](Performance-and-Benchmarks)). There is no
+batched-write path yet, so write-heavy bulk loads pay the fsync per record.
 
 **A crash mid-compaction can leave orphaned `.sst` files.** The database stays
 consistent because the manifest decides which tables are live, but unreferenced
@@ -64,6 +65,9 @@ your head, and growing surface area is the fastest way to lose that.
 ## See also
 
 - [Architecture](Architecture) for the design decisions behind these trade-offs.
+- [Design-Decisions](Design-Decisions) for the rejected alternatives in full.
+- [Writing-an-Extension](Writing-an-Extension) for how the roadmap items would land.
+- [Comparisons](Comparisons) for what the non-goals mean against other engines.
 - [Recovery](Recovery) for the durability contract that constrains the roadmap.
 - [Troubleshooting](Troubleshooting) for working around the current limitations.
 

@@ -113,6 +113,9 @@ test with `go test -run TestName ./`. The race detector run in CI
 
 - [Recovery](Recovery) for crash and restart behaviour.
 - [Compaction](Compaction) for space reclamation.
+- [Configuration-and-Tuning](Configuration-and-Tuning) for the knobs behind these symptoms.
+- [Performance-and-Benchmarks](Performance-and-Benchmarks) for the fsync numbers.
+- [FAQ](FAQ) for quick conceptual answers.
 - [Write-Path](Write-Path) for the fsync cost of durable writes.
 
 ---

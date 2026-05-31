@@ -149,6 +149,9 @@ far below the raw number of writes, proving superseded versions were reclaimed.
 ## See also
 
 - [SSTable-Format](SSTable-Format) for the tables being merged.
+- [Merging-Iterator](Merging-Iterator) for the heap that drives the merge.
+- [Manifest-and-Versioning](Manifest-and-Versioning) for the atomic swap.
+- [Configuration-and-Tuning](Configuration-and-Tuning) for the trigger and multiplier.
 - [Read-Path](Read-Path) for why disjoint levels make reads cheap.
 - [Recovery](Recovery) for the manifest and the atomic swap on restart.
 

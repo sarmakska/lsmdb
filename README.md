@@ -215,16 +215,35 @@ What I will not add: a network layer, a query language, or pluggable comparators
 
 ## Documentation
 
-The wiki goes deep on each subsystem with real code references:
-[Home](https://github.com/sarmakska/lsmdb/wiki) .
-[Architecture](https://github.com/sarmakska/lsmdb/wiki/Architecture) .
-[Write-Path](https://github.com/sarmakska/lsmdb/wiki/Write-Path) .
-[Read-Path](https://github.com/sarmakska/lsmdb/wiki/Read-Path) .
-[SSTable-Format](https://github.com/sarmakska/lsmdb/wiki/SSTable-Format) .
-[Compaction](https://github.com/sarmakska/lsmdb/wiki/Compaction) .
-[Recovery](https://github.com/sarmakska/lsmdb/wiki/Recovery) .
-[Roadmap-and-Limitations](https://github.com/sarmakska/lsmdb/wiki/Roadmap-and-Limitations) .
-[Troubleshooting](https://github.com/sarmakska/lsmdb/wiki/Troubleshooting)
+The [wiki](https://github.com/sarmakska/lsmdb/wiki) goes deep on each subsystem
+with real code references, byte-level data formats, worked examples and failure
+modes. Start at [Home](https://github.com/sarmakska/lsmdb/wiki) for the full
+index. Highlights:
+
+- Design: [Architecture](https://github.com/sarmakska/lsmdb/wiki/Architecture) .
+  [Design-Decisions](https://github.com/sarmakska/lsmdb/wiki/Design-Decisions) .
+  [Comparisons](https://github.com/sarmakska/lsmdb/wiki/Comparisons)
+- Paths: [Write-Path](https://github.com/sarmakska/lsmdb/wiki/Write-Path) .
+  [Read-Path](https://github.com/sarmakska/lsmdb/wiki/Read-Path)
+- Subsystems: [Skip-List-and-MemTable](https://github.com/sarmakska/lsmdb/wiki/Skip-List-and-MemTable) .
+  [Write-Ahead-Log](https://github.com/sarmakska/lsmdb/wiki/Write-Ahead-Log) .
+  [SSTable-Format](https://github.com/sarmakska/lsmdb/wiki/SSTable-Format) .
+  [Bloom-Filter](https://github.com/sarmakska/lsmdb/wiki/Bloom-Filter) .
+  [Compaction](https://github.com/sarmakska/lsmdb/wiki/Compaction) .
+  [Manifest-and-Versioning](https://github.com/sarmakska/lsmdb/wiki/Manifest-and-Versioning) .
+  [Internal-Key-and-MVCC](https://github.com/sarmakska/lsmdb/wiki/Internal-Key-and-MVCC) .
+  [Merging-Iterator](https://github.com/sarmakska/lsmdb/wiki/Merging-Iterator)
+- Reference: [API-Reference](https://github.com/sarmakska/lsmdb/wiki/API-Reference) .
+  [Configuration-and-Tuning](https://github.com/sarmakska/lsmdb/wiki/Configuration-and-Tuning) .
+  [Data-Formats](https://github.com/sarmakska/lsmdb/wiki/Data-Formats)
+- Operating: [Recovery](https://github.com/sarmakska/lsmdb/wiki/Recovery) .
+  [Performance-and-Benchmarks](https://github.com/sarmakska/lsmdb/wiki/Performance-and-Benchmarks) .
+  [Troubleshooting](https://github.com/sarmakska/lsmdb/wiki/Troubleshooting)
+- More: [Testing-Strategy](https://github.com/sarmakska/lsmdb/wiki/Testing-Strategy) .
+  [Examples-and-Recipes](https://github.com/sarmakska/lsmdb/wiki/Examples-and-Recipes) .
+  [Writing-an-Extension](https://github.com/sarmakska/lsmdb/wiki/Writing-an-Extension) .
+  [FAQ](https://github.com/sarmakska/lsmdb/wiki/FAQ) .
+  [Roadmap-and-Limitations](https://github.com/sarmakska/lsmdb/wiki/Roadmap-and-Limitations)
 
 ## License
 

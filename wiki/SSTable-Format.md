@@ -136,6 +136,8 @@ compaction and range scans.
 ## See also
 
 - [Read-Path](Read-Path) for how tables are consulted during a Get.
+- [Bloom-Filter](Bloom-Filter) for the membership filter in detail.
+- [Data-Formats](Data-Formats) for the exact byte layout of every block.
 - [Compaction](Compaction) for how tables are merged and replaced.
 - [Recovery](Recovery) for how the magic number and bounds help on restart.
 

@@ -152,6 +152,8 @@ separate calls to make that change small.
 ## See also
 
 - [Read-Path](Read-Path) for how these writes are read back.
+- [Write-Ahead-Log](Write-Ahead-Log) for the durability framing in detail.
+- [Skip-List-and-MemTable](Skip-List-and-MemTable) for the buffer writes land in.
 - [SSTable-Format](SSTable-Format) for what a flushed table looks like.
 - [Recovery](Recovery) for what happens to the log on restart.
 
