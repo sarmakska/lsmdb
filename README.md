@@ -1,5 +1,3 @@
-<p align="center"><img src=".github/brand/banner.svg" alt="lsmdb by sarmalinux" width="100%"></p>
-
 # lsmdb
 
 A log-structured merge-tree storage engine in Go: write-ahead log, SSTables, bloom filters, levelled compaction and MVCC snapshots.
