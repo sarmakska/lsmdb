@@ -151,3 +151,6 @@ far below the raw number of writes, proving superseded versions were reclaimed.
 - [SSTable-Format](SSTable-Format) for the tables being merged.
 - [Read-Path](Read-Path) for why disjoint levels make reads cheap.
 - [Recovery](Recovery) for the manifest and the atomic swap on restart.
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)

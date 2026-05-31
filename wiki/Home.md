@@ -8,6 +8,44 @@ who wants to understand how the engine works, integrate it, or extend it. Each
 page references the actual source so you can move between the prose and the code
 without guessing.
 
+## Thirty-second orientation
+
+A write goes to a log, then to memory, then to a sorted file on disk. Reads walk
+those sources newest first. A background merge keeps the files tidy. That is the
+whole engine in one diagram:
+
+```mermaid
+flowchart TD
+    A[Put / Delete] --> B[Write-ahead log<br/>append + fsync]
+    B --> C[Skip-list MemTable]
+    C -->|full| D[Freeze + flush]
+    D --> E[(L0 SSTable)]
+    E -->|compaction| F[(L1..L6 SSTables)]
+    G[Get / Iterator] --> C
+    G --> E
+    G --> F
+
+    classDef sky fill:#0d1117,stroke:#38bdf8,color:#f5f7fa;
+    classDef cyan fill:#0d1117,stroke:#22d3ee,color:#f5f7fa;
+    classDef em fill:#0d1117,stroke:#34d399,color:#f5f7fa;
+    class A,B,C,D sky;
+    class E,F cyan;
+    class G em;
+```
+
+## Where to go next
+
+| If you want to... | Read |
+| --- | --- |
+| See the components and invariants | [Architecture](Architecture) |
+| Follow a write to durable disk | [Write-Path](Write-Path) |
+| Follow a read and understand MVCC | [Read-Path](Read-Path) |
+| Understand the on-disk table | [SSTable-Format](SSTable-Format) |
+| Learn the merge policy | [Compaction](Compaction) |
+| See crash and restart in detail | [Recovery](Recovery) |
+| Know what is and is not coming | [Roadmap and Limitations](Roadmap-and-Limitations) |
+| Fix a symptom you are hitting | [Troubleshooting](Troubleshooting) |
+
 ## What lsmdb is
 
 lsmdb is an embedded, ordered key-value storage engine. It stores sorted keys,
@@ -51,6 +89,8 @@ level hierarchy, discarding superseded versions and tombstones to reclaim space.
   tombstone handling and space reclamation.
 - [Recovery](Recovery): crash recovery, the manifest, and how a torn write is
   detected and dropped.
+- [Roadmap and Limitations](Roadmap-and-Limitations): what I will and will not
+  add, and what the engine is honestly not.
 - [Troubleshooting](Troubleshooting): symptoms, causes and fixes.
 
 ## Source layout
@@ -69,3 +109,6 @@ level hierarchy, discarding superseded versions and tombstones to reclaim space.
 | `internal/sstable`        | SSTable writer and reader                       |
 | `internal/bloom`          | Bloom filter builder and filter                 |
 | `internal/encoding`       | Internal key layout and comparators             |
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)

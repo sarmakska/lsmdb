@@ -138,3 +138,6 @@ compaction and range scans.
 - [Read-Path](Read-Path) for how tables are consulted during a Get.
 - [Compaction](Compaction) for how tables are merged and replaced.
 - [Recovery](Recovery) for how the magic number and bounds help on restart.
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)

@@ -45,6 +45,37 @@ into levels. Level 0 holds tables flushed directly from MemTables, so they can
 overlap in key range. Levels 1 and below hold non-overlapping tables, so at most
 one table per level can contain any given key.
 
+```mermaid
+flowchart TD
+    subgraph L0[L0, overlapping, flushed from memory]
+        t0[004.sst a..m]
+        t1[007.sst c..z]
+    end
+    subgraph L1[L1, disjoint]
+        u0[a..f]
+        u1[g..p]
+        u2[q..z]
+    end
+    subgraph L2[L2, disjoint, 10x larger]
+        v0[a..l]
+        v1[m..z]
+    end
+    L0 -->|merge all L0 + overlapping L1| L1
+    L1 -->|merge one table down| L2
+    L2 --> L3[L3..L6]
+
+    classDef l0 fill:#0d1117,stroke:#34d399,color:#f5f7fa;
+    classDef l1 fill:#0d1117,stroke:#38bdf8,color:#f5f7fa;
+    classDef l2 fill:#0d1117,stroke:#22d3ee,color:#f5f7fa;
+    class t0,t1 l0;
+    class u0,u1,u2 l1;
+    class v0,v1 l2;
+```
+
+The fixed depth is seven levels (`numLevels` in `db.go`). A read scans all of L0
+newest first because the tables overlap, then binary searches each disjoint
+level below and touches at most one table per level.
+
 ### Manifest
 
 The set of live tables and their level assignment is recorded in an append-only
@@ -98,6 +129,35 @@ about and to test. The trade-off is that a flush or compaction briefly blocks
 writers; a production engine would move these to a background goroutine, and the
 manifest design already supports that evolution.
 
+## Design decisions and rejected alternatives
+
+The choices that shaped the engine, and what I turned down:
+
+**Skip-list MemTable over a sorted slice or a B-tree.** A sorted slice iterates
+beautifully but inserts in O(n), which is fatal for a write buffer. A B-tree has
+the right complexity but its rebalancing makes lock-free concurrent reads hard.
+A skip list gives logarithmic insert and search while letting readers walk
+forward as a single writer appends, which is exactly the access pattern here.
+
+**Append-only manifest over a rewritten snapshot file.** Writing the whole live
+table set to a fresh file and renaming it in is simpler to read back, but every
+compaction would rewrite the entire list. The version-edit log that LevelDB and
+RocksDB use is smaller per change and is the natural atomic commit point: one
+fsynced edit both adds the compaction outputs and deletes its inputs. Kept as
+newline-delimited JSON so the manifest is inspectable with `cat`.
+
+**Inline flush and compaction over a background goroutine.** Running them inline
+under the write lock makes the durability and recovery semantics deterministic
+and trivial to test: nothing races the level layout. The cost is that a flush or
+compaction briefly stalls writers. The manifest design already supports moving
+this to a background goroutine, which is the first change a real workload needs.
+
+**Whole keys in data blocks over prefix compression.** Prefix compression saves
+disk but adds restart-point bookkeeping to the block reader. Storing keys whole
+keeps the reader a straight scan and the format describable in a paragraph.
+Prefix compression touches neither the index nor the footer, so it stays a clean
+later addition.
+
 ## Further reading
 
 - [Write-Path](Write-Path) for the life of a write.
@@ -105,3 +165,7 @@ manifest design already supports that evolution.
 - [SSTable-Format](SSTable-Format) for the on-disk layout.
 - [Compaction](Compaction) for the merge policy.
 - [Recovery](Recovery) for restart and crash handling.
+- [Roadmap and Limitations](Roadmap-and-Limitations) for what is not here.
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)

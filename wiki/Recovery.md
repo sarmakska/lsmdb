@@ -130,9 +130,56 @@ Until the manifest edit is durable, the log is the source of truth and is
 replayed on open. This ordering means there is never a window where committed
 data exists in neither the log nor a recorded table.
 
+## A walkthrough you can run
+
+To see the contract end to end, save this as `crash_test.go` in the repo root and
+run `go test -run TestCrashWalkthrough -v ./`. It writes a committed key, drops
+the handle without Close to stand in for a crash, reopens, and checks that the
+committed write came back and that nothing it never wrote did.
+
+```go
+package lsmdb
+
+import "testing"
+
+func TestCrashWalkthrough(t *testing.T) {
+	dir := t.TempDir()
+
+	// Session one: write, then "crash" by abandoning the handle. The MemTable
+	// is lost; the synced WAL is not.
+	db, _ := Open(dir, Options{})
+	if err := db.Put([]byte("committed"), []byte("survives")); err != nil {
+		t.Fatal(err)
+	}
+	// No db.Close(). The process is gone.
+
+	// Session two: reopen. recoverLog replays the synced WAL.
+	db2, _ := Open(dir, Options{})
+	defer db2.Close()
+
+	got, err := db2.Get([]byte("committed"))
+	if err != nil || string(got) != "survives" {
+		t.Fatalf("committed write did not survive: %q %v", got, err)
+	}
+	if _, err := db2.Get([]byte("never-written")); err != ErrNotFound {
+		t.Fatalf("a key that was never written came back: %v", err)
+	}
+}
+```
+
+The committed key survives because `Put` fsynced its WAL record before returning.
+On reopen, `recoverLog` replays the log into the MemTable and flushes it to L0. A
+write that was only half-written at crash time fails its CRC and is dropped, so
+an uncommitted record never resurrects. This is the same property
+`TestDurabilityAndRecovery` checks at two thousand keys, and the other half is
+what `TestRecoveryDropsTornTail` checks by appending garbage to a log.
+
 ## See also
 
 - [Write-Path](Write-Path) for the durability barrier that makes recovery
   possible.
 - [Compaction](Compaction) for the atomic table swap through the manifest.
 - [Troubleshooting](Troubleshooting) for recovery-related symptoms.
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)

@@ -114,3 +114,6 @@ test with `go test -run TestName ./`. The race detector run in CI
 - [Recovery](Recovery) for crash and restart behaviour.
 - [Compaction](Compaction) for space reclamation.
 - [Write-Path](Write-Path) for the fsync cost of durable writes.
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)

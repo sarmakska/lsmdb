@@ -154,3 +154,6 @@ separate calls to make that change small.
 - [Read-Path](Read-Path) for how these writes are read back.
 - [SSTable-Format](SSTable-Format) for what a flushed table looks like.
 - [Recovery](Recovery) for what happens to the log on restart.
+
+---
+SarmaLinux . sarmalinux.com . [lsmdb on GitHub](https://github.com/sarmakska/lsmdb)
