@@ -1,0 +1,29 @@
+# Build artefacts
+/bin/
+/dist/
+/build/
+*.test
+*.out
+lsmdb-demo
+
+# Coverage
+/coverage/
+coverage.out
+coverage.html
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Editor and OS noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Local environment overrides
+.env*.local
+
+# Local database data directories used while experimenting
+/data/
+/tmp-db/
