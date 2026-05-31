@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="320" viewBox="0 0 1280 320" role="img" aria-label="lsmdb by sarmalinux">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#06060c"/>
+      <stop offset="1" stop-color="#0d1117"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#38bdf8"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <rect width="1280" height="4" fill="url(#accent)"/>
+  <!-- shield mark -->
+  <g transform="translate(80,110) scale(1.0)">
+    <polygon points="50,2 95,30 95,70 50,98 5,70 5,30" fill="#0d1117" stroke="#38bdf8" stroke-width="4"/>
+    <polygon points="50,10 88,34 88,66 50,90 12,66 12,34" fill="#0f172a"/>
+    <path d="M 30 25 L 70 25 L 70 35 L 42 35 L 42 42 L 65 42 C 78 42 78 58 65 58 L 42 58 L 42 65 L 70 65 L 70 75 L 30 75 L 30 65 L 58 65 L 58 58 L 35 58 C 22 58 22 42 35 42 L 58 42 L 58 35 L 30 35 Z" fill="#38bdf8"/>
+  </g>
+  <!-- terminal prompt + wordmark -->
+  <text x="210" y="150" font-family="'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace" font-size="34">
+    <tspan fill="#34d399" font-weight="600">visitor</tspan><tspan fill="#8b9bb4">@</tspan><tspan fill="#22d3ee" font-weight="600">sarmalinux</tspan><tspan fill="#8b9bb4">:</tspan><tspan fill="#60a5fa">~</tspan><tspan fill="#8b9bb4">$ </tspan><tspan fill="#f5f7fa">lsmdb</tspan>
+  </text>
+  <text x="212" y="205" font-family="'Geist','Segoe UI',system-ui,sans-serif" font-size="26" fill="#c4cdda">A log-structured merge-tree storage engine in Go</text>
+  <text x="212" y="250" font-family="'Geist Mono', ui-monospace, monospace" font-size="18" fill="#6b7a90">sarmalinux.com  /  github.com/sarmakska</text>
+</svg>
