@@ -135,21 +135,40 @@ type Snapshot struct { /* unexported */ }
 
 func (s *Snapshot) Get(key []byte) ([]byte, error)
 func (s *Snapshot) NewIterator() *Iterator
+func (s *Snapshot) NewIteratorWith(opts IterOptions) *Iterator
 ```
 
 `Snapshot.Get` resolves a key at the snapshot's sequence. `Snapshot.NewIterator`
-returns a range iterator that observes the snapshot.
+and `Snapshot.NewIteratorWith` return range iterators that observe the snapshot.
 
 ## Iteration
 
-### NewIterator
+### NewIterator and NewIteratorWith
 
 ```go
 func (db *DB) NewIterator() *Iterator
+func (db *DB) NewIteratorWith(opts IterOptions) *Iterator
 ```
 
-Returns a range iterator over the latest committed state. A `Snapshot`'s iterator
-observes the snapshot instead.
+`NewIterator` returns a range iterator over the whole key space at the latest
+committed state. `NewIteratorWith` restricts the scan to a half-open interval. A
+`Snapshot`'s iterators observe the snapshot instead.
+
+```go
+type IterOptions struct {
+    LowerBound []byte // inclusive start, optional
+    UpperBound []byte // exclusive end, optional
+}
+```
+
+Both bounds are optional and compared by raw user-key bytes. `LowerBound` is
+inclusive: the iterator seeks straight to it and never yields a smaller key,
+including when `Seek(target)` is called with a `target` below the bound, which is
+clamped up. `UpperBound` is exclusive: the iterator stops before any key greater
+than or equal to it. A `[LowerBound, UpperBound)` interval therefore selects
+exactly the keys in that range and only touches the tables and blocks that
+overlap it, which keeps a prefix or sub-range scan cheap. The zero value scans
+the whole key space, identical to `NewIterator`.
 
 ```go
 type Iterator struct { /* unexported */ }
@@ -202,6 +221,15 @@ it := db.NewIterator()
 for it.SeekToFirst(); it.Valid(); it.Next() {
     fmt.Printf("%s = %s\n", it.Key(), it.Value())
 }
+
+// Bounded scan over [from, to): seeks to the lower bound, stops at the upper.
+r := db.NewIteratorWith(lsmdb.IterOptions{
+    LowerBound: []byte("user:1000"),
+    UpperBound: []byte("user:2000"),
+})
+for r.SeekToFirst(); r.Valid(); r.Next() {
+    fmt.Printf("%s = %s\n", r.Key(), r.Value())
+}
 ```
 
 More patterns, including snapshot isolation and prefix scans, are in
@@ -210,7 +238,7 @@ More patterns, including snapshot isolation and prefix scans, are in
 
 ## Stability
 
-lsmdb is pre-1.0. The seven-method surface above is stable in intent, but
+lsmdb is pre-1.0. The eight-method surface above is stable in intent, but
 signatures may change before a 1.0 tag. The `Options` struct may gain fields
 (the zero value will keep working). The on-disk format is versioned by the
 SSTable magic number `0x6c736d6462303031`; a format change will bump it. See

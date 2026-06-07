@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   iterator for ordered range scans across the MemTable and every level.
 - Public API: Open, Close, Put, Delete, Get, NewIterator and Snapshot, plus an
   append-only manifest that records the live table set durably.
+- Bounded range scans through NewIteratorWith and IterOptions, taking a
+  half-open [LowerBound, UpperBound) interval so a prefix or sub-range scan
+  seeks straight to the lower bound and stops at the upper bound. Available on
+  both the database and a snapshot.
 - Command-line demo under cmd/lsmdb-demo and a runnable Example test.
 - Test suite covering write and read roundtrips, durability and crash recovery,
   compaction correctness and space reclamation, the bloom filter false positive

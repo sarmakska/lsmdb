@@ -149,9 +149,20 @@ it := db.NewIterator()           // ordered range scan
 for it.SeekToFirst(); it.Valid(); it.Next() {
 	fmt.Printf("%s = %s\n", it.Key(), it.Value())
 }
+
+// Bounded scan over a half-open interval [from, to). The iterator seeks
+// straight to the lower bound and stops at the upper bound, so it only
+// touches the tables and blocks that overlap the range.
+r := db.NewIteratorWith(lsmdb.IterOptions{
+	LowerBound: []byte("user:1000"),
+	UpperBound: []byte("user:2000"),
+})
+for r.SeekToFirst(); r.Valid(); r.Next() {
+	fmt.Printf("%s = %s\n", r.Key(), r.Value())
+}
 ```
 
-The public surface is seven methods: `Open`, `Close`, `Put`, `Delete`, `Get`, `NewIterator` and `Snapshot`. Everything under them is in this package and `internal/`.
+The public surface is eight methods: `Open`, `Close`, `Put`, `Delete`, `Get`, `NewIterator`, `NewIteratorWith` and `Snapshot`. Both iterator constructors are also available on a `Snapshot`. Everything under them is in this package and `internal/`.
 
 ## What is implemented
 
@@ -163,6 +174,7 @@ The public surface is seven methods: `Open`, `Close`, `Put`, `Delete`, `Get`, `N
 | Bloom filter | `internal/bloom` | double hashing, `m/n = -ln(p)/ln(2)^2` sizing |
 | Levelled compaction | `compaction.go` | overlap-driven merges, newest-wins, bottom-level tombstone drop |
 | Merging iterator | `iterator.go` | min-heap over every sorted source |
+| Bounded range scans | `public_iterator.go` | half-open `[LowerBound, UpperBound)` via `IterOptions` |
 | MVCC + snapshots | `public_iterator.go`, `internal/encoding` | 56-bit sequence in the internal-key trailer |
 | Manifest | `manifest.go` | append-only edit log, the atomic commit point |
 

@@ -91,34 +91,46 @@ copy them if you keep them past the next `Next`.
 
 ## Range scan over a bound
 
-There is no `[lo, hi)` iterator method; build it with `Seek` and a manual upper
-bound:
+Pass the half-open interval straight to `NewIteratorWith`. The iterator seeks to
+the inclusive `LowerBound` and stops at the exclusive `UpperBound`, so you do not
+write the bound check by hand:
 
 ```go
-it := db.NewIterator()
-lo, hi := []byte("user:0000"), []byte("user:0100")
-for it.Seek(lo); it.Valid(); it.Next() {
-    if bytes.Compare(it.Key(), hi) >= 0 {
-        break
-    }
+it := db.NewIteratorWith(lsmdb.IterOptions{
+    LowerBound: []byte("user:0000"),
+    UpperBound: []byte("user:0100"),
+})
+for it.SeekToFirst(); it.Valid(); it.Next() {
     process(it.Key(), it.Value())
 }
 ```
 
-This is the pattern `cmd/lsmdb-demo/main.go` uses for its range scan.
+Either bound may be omitted: leave `UpperBound` nil to scan from a start key to
+the end, or leave `LowerBound` nil to scan from the beginning up to a limit.
 
 ## Prefix scan
 
-A prefix scan is a range scan from the prefix to the first key past it. For a
-string prefix:
+A prefix scan is a bounded scan from the prefix to the first key past it. Compute
+the exclusive upper bound by incrementing the last non-`0xff` byte of the prefix:
 
 ```go
-func prefixScan(db *lsmdb.DB, prefix []byte, fn func(k, v []byte)) {
-    it := db.NewIterator()
-    for it.Seek(prefix); it.Valid(); it.Next() {
-        if !bytes.HasPrefix(it.Key(), prefix) {
-            break
+func prefixUpperBound(prefix []byte) []byte {
+    end := append([]byte(nil), prefix...)
+    for i := len(end) - 1; i >= 0; i-- {
+        if end[i] != 0xff {
+            end[i]++
+            return end[:i+1]
         }
+    }
+    return nil // prefix is all 0xff: scan to the end
+}
+
+func prefixScan(db *lsmdb.DB, prefix []byte, fn func(k, v []byte)) {
+    it := db.NewIteratorWith(lsmdb.IterOptions{
+        LowerBound: prefix,
+        UpperBound: prefixUpperBound(prefix),
+    })
+    for it.SeekToFirst(); it.Valid(); it.Next() {
         fn(it.Key(), it.Value())
     }
 }
