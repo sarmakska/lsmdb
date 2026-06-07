@@ -287,6 +287,118 @@ func TestOrderedRangeScanAcrossLevels(t *testing.T) {
 	db.Close()
 }
 
+// TestBoundedRangeScan checks the half-open [LowerBound, UpperBound) iterator
+// across data spread over the MemTable, L0 and deeper levels. It exercises a
+// lower bound, an upper bound, both together, bounds that fall between stored
+// keys, and an empty interval.
+func TestBoundedRangeScan(t *testing.T) {
+	dir := t.TempDir()
+	db := mustOpen(t, dir, Options{MemTableSize: 4 * 1024, L0CompactionTrigger: 2})
+	defer db.Close()
+
+	const n = 1000
+	for i := 0; i < n; i++ {
+		k := []byte(fmt.Sprintf("k%05d", i))
+		if err := db.Put(k, []byte(fmt.Sprintf("v%05d", i))); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	collect := func(opts IterOptions) []string {
+		it := db.NewIteratorWith(opts)
+		var got []string
+		var prev []byte
+		for it.SeekToFirst(); it.Valid(); it.Next() {
+			k := append([]byte(nil), it.Key()...)
+			if prev != nil && bytes.Compare(prev, k) >= 0 {
+				t.Fatalf("scan out of order: %s after %s", k, prev)
+			}
+			prev = k
+			got = append(got, string(k))
+		}
+		return got
+	}
+
+	// Lower bound only: inclusive start at k00990.
+	got := collect(IterOptions{LowerBound: []byte("k00990")})
+	if len(got) != 10 || got[0] != "k00990" || got[len(got)-1] != "k00999" {
+		t.Fatalf("lower-bound scan = %v", got)
+	}
+
+	// Upper bound only: exclusive end at k00005.
+	got = collect(IterOptions{UpperBound: []byte("k00005")})
+	want := []string{"k00000", "k00001", "k00002", "k00003", "k00004"}
+	if !equalStrings(got, want) {
+		t.Fatalf("upper-bound scan = %v, want %v", got, want)
+	}
+
+	// Both bounds: half-open [k00100, k00103).
+	got = collect(IterOptions{LowerBound: []byte("k00100"), UpperBound: []byte("k00103")})
+	want = []string{"k00100", "k00101", "k00102"}
+	if !equalStrings(got, want) {
+		t.Fatalf("bounded scan = %v, want %v", got, want)
+	}
+
+	// Bounds that land between stored keys still cut the range correctly.
+	got = collect(IterOptions{LowerBound: []byte("k00100a"), UpperBound: []byte("k00103a")})
+	want = []string{"k00101", "k00102", "k00103"}
+	if !equalStrings(got, want) {
+		t.Fatalf("between-keys scan = %v, want %v", got, want)
+	}
+
+	// Empty interval yields nothing.
+	if got = collect(IterOptions{LowerBound: []byte("k00500"), UpperBound: []byte("k00500")}); len(got) != 0 {
+		t.Fatalf("empty interval returned %v", got)
+	}
+
+	// Seek inside a bounded iterator is clamped to the lower bound.
+	it := db.NewIteratorWith(IterOptions{LowerBound: []byte("k00400"), UpperBound: []byte("k00410")})
+	it.Seek([]byte("k00000"))
+	if !it.Valid() || string(it.Key()) != "k00400" {
+		t.Fatalf("clamped seek landed on %q, want k00400", it.Key())
+	}
+	// Seek past the upper bound yields an invalid iterator.
+	it.Seek([]byte("k00999"))
+	if it.Valid() {
+		t.Fatalf("seek past upper bound should be invalid, got %q", it.Key())
+	}
+}
+
+// TestBoundedScanSkipsTombstones checks a bounded scan still hides deleted keys
+// and surfaces the newest value, matching the unbounded iterator's semantics.
+func TestBoundedScanSkipsTombstones(t *testing.T) {
+	db := mustOpen(t, t.TempDir(), Options{MemTableSize: 4 * 1024})
+	defer db.Close()
+
+	for i := 0; i < 200; i++ {
+		_ = db.Put([]byte(fmt.Sprintf("k%04d", i)), []byte("old"))
+	}
+	_ = db.Put([]byte("k0050"), []byte("new"))
+	_ = db.Delete([]byte("k0051"))
+
+	it := db.NewIteratorWith(IterOptions{LowerBound: []byte("k0050"), UpperBound: []byte("k0053")})
+	var got []string
+	for it.SeekToFirst(); it.Valid(); it.Next() {
+		got = append(got, fmt.Sprintf("%s=%s", it.Key(), it.Value()))
+	}
+	want := []string{"k0050=new", "k0052=old"}
+	if !equalStrings(got, want) {
+		t.Fatalf("bounded scan over tombstones = %v, want %v", got, want)
+	}
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // TestSeekIterator checks the iterator can position at an arbitrary key.
 func TestSeekIterator(t *testing.T) {
 	db := mustOpen(t, t.TempDir(), Options{MemTableSize: 4 * 1024})

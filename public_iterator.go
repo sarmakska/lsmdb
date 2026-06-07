@@ -50,7 +50,32 @@ func (s *Snapshot) Get(key []byte) ([]byte, error) {
 
 // NewIterator returns a range iterator that observes the snapshot.
 func (s *Snapshot) NewIterator() *Iterator {
-	return s.db.newIteratorAt(s.seq)
+	return s.db.newIteratorAt(s.seq, IterOptions{})
+}
+
+// NewIteratorWith returns a bounded range iterator that observes the snapshot.
+func (s *Snapshot) NewIteratorWith(opts IterOptions) *Iterator {
+	return s.db.newIteratorAt(s.seq, opts)
+}
+
+// IterOptions bounds a range scan to a half-open user-key interval. Both bounds
+// are optional; the zero value scans the whole key space, which is what the
+// unbounded NewIterator uses.
+//
+// LowerBound, when set, is inclusive: the iterator never yields a key that
+// sorts before it. UpperBound, when set, is exclusive: the iterator stops
+// before yielding a key greater than or equal to it. Bounds are compared by
+// raw user-key bytes, the same ordering the engine stores keys in, so a
+// [LowerBound, UpperBound) interval selects exactly the keys in that range.
+//
+// Bounds are a cheap, durable way to scan a prefix or a sub-range without
+// reading the whole database: the iterator seeks straight to LowerBound and
+// halts at UpperBound, so only the matching tables and blocks are touched.
+type IterOptions struct {
+	// LowerBound, if non-nil, is the inclusive start of the scan.
+	LowerBound []byte
+	// UpperBound, if non-nil, is the exclusive end of the scan.
+	UpperBound []byte
 }
 
 // Iterator is the public range-scan cursor. It walks user keys in ascending
@@ -60,6 +85,9 @@ type Iterator struct {
 	merged *mergingIterator
 	seq    uint64
 
+	lower []byte
+	upper []byte
+
 	key   []byte
 	value []byte
 	valid bool
@@ -67,14 +95,20 @@ type Iterator struct {
 
 // NewIterator returns an iterator over the latest committed state.
 func (db *DB) NewIterator() *Iterator {
-	return db.newIteratorAt(encoding.MaxSequence)
+	return db.newIteratorAt(encoding.MaxSequence, IterOptions{})
+}
+
+// NewIteratorWith returns an iterator over the latest committed state restricted
+// to the half-open interval described by opts.
+func (db *DB) NewIteratorWith(opts IterOptions) *Iterator {
+	return db.newIteratorAt(encoding.MaxSequence, opts)
 }
 
 // newIteratorAt builds a merging iterator over every live source. The sources
 // are snapshotted under the read lock; the SSTables are immutable and the
 // MemTables are appended to but never mutated in place, so the iterator sees a
 // stable view for the keys it has already passed.
-func (db *DB) newIteratorAt(seq uint64) *Iterator {
+func (db *DB) newIteratorAt(seq uint64, opts IterOptions) *Iterator {
 	db.mu.RLock()
 	defer db.mu.RUnlock()
 
@@ -91,18 +125,34 @@ func (db *DB) newIteratorAt(seq uint64) *Iterator {
 			iters = append(iters, &tableIter{it: t.NewIterator()})
 		}
 	}
-	return &Iterator{merged: newMergingIterator(iters), seq: seq}
+	it := &Iterator{merged: newMergingIterator(iters), seq: seq}
+	if opts.LowerBound != nil {
+		it.lower = append([]byte(nil), opts.LowerBound...)
+	}
+	if opts.UpperBound != nil {
+		it.upper = append([]byte(nil), opts.UpperBound...)
+	}
+	return it
 }
 
-// SeekToFirst positions the iterator at the first visible key.
+// SeekToFirst positions the iterator at the first visible key. When a lower
+// bound is set the scan starts there rather than at the absolute first key.
 func (it *Iterator) SeekToFirst() {
+	if it.lower != nil {
+		it.Seek(it.lower)
+		return
+	}
 	it.merged.SeekToFirst()
 	it.advanceToVisible(nil)
 }
 
 // Seek positions the iterator at the first visible key greater than or equal to
-// target.
+// target. A lower bound, if set and greater than target, takes precedence so
+// the iterator never yields a key below the bound.
 func (it *Iterator) Seek(target []byte) {
+	if it.lower != nil && encoding.CompareBytes(target, it.lower) < 0 {
+		target = it.lower
+	}
 	it.merged.Seek(encoding.MakeInternalKey(target, encoding.MaxSequence, encoding.KindSet))
 	it.advanceToVisible(nil)
 }
@@ -124,6 +174,13 @@ func (it *Iterator) advanceToVisible(skipKey []byte) {
 	for it.merged.Valid() {
 		ik := it.merged.Key()
 		uk := ik.UserKey()
+
+		// Stop at the exclusive upper bound. Keys arrive in ascending user-key
+		// order, so once one reaches the bound every later key does too.
+		if it.upper != nil && encoding.CompareBytes(uk, it.upper) >= 0 {
+			it.valid = false
+			return
+		}
 
 		if skipKey != nil && encoding.CompareBytes(uk, skipKey) == 0 {
 			it.merged.Next()
